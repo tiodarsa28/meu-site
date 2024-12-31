@@ -114,23 +114,38 @@
         });
 
         async function conectarCarteira(provider) {
-            window.web3 = new Web3(provider);
+    window.web3 = new Web3(provider);
 
-            try {
-                await provider.request({ method: 'eth_requestAccounts' });
-                console.log("Carteira conectada!");
-                walletStatus.textContent = "Carteira conectada com sucesso!";
-                walletStatus.classList.add('success-message');
+    try {
+        await provider.request({ method: 'eth_requestAccounts' });
+        console.log("Carteira conectada!");
+        walletStatus.textContent = "Carteira conectada com sucesso!";
+        walletStatus.classList.add('success-message');
 
-                const accounts = await provider.request({ method: 'eth_accounts' });
-                const endereco = accounts[0];
-                document.getElementById('enderecoCarteira').value = endereco;
-            } catch (error) {
-                console.error("Usuário rejeitou a conexão da carteira:", error);
-                walletStatus.textContent = "Por favor, conecte sua carteira e tente novamente.";
+        const accounts = await provider.request({ method: 'eth_accounts' });
+        const endereco = accounts[0];
+        document.getElementById('enderecoCarteira').value = endereco;
+
+        // Listener para desconexão ou troca de conta
+        provider.on('accountsChanged', (accounts) => {
+            if (accounts.length === 0) {
+                walletStatus.textContent = "Carteira desconectada. Por favor, reconecte.";
+                walletStatus.classList.remove('success-message');
                 walletStatus.classList.add('message');
+                document.getElementById('enderecoCarteira').value = '';
+            } else {
+                const novoEndereco = accounts[0];
+                walletStatus.textContent = "Conta trocada com sucesso!";
+                walletStatus.classList.add('success-message');
+                document.getElementById('enderecoCarteira').value = novoEndereco;
             }
-        }
+        });
+    } catch (error) {
+        console.error("Usuário rejeitou a conexão da carteira:", error);
+        walletStatus.textContent = "Por favor, conecte sua carteira e tente novamente.";
+        walletStatus.classList.add('message');
+    }
+}
 
         async function solicitarAirDrop() {
             const enderecoCarteira = document.getElementById('enderecoCarteira').value.trim();
